@@ -28,7 +28,7 @@ class TopUpViewSet(viewsets.ModelViewSet):
             customer = Customer(user=user)
             customer.save()
         m = Manager.objects.filter(user__username=request.user.username).first()
-        print(m.user.usename)
+        print(m.user.username)
         topup = TopUp(maker=m, amount=amount, customer=customer, type="cash")
         topup.save()
         t = TopUpSerializer(topup, context={"request": request})
