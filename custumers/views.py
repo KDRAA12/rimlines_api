@@ -19,12 +19,18 @@ class ManagerViewSet(viewsets.ModelViewSet):
     queryset = Manager.objects.all()
     serializer_class = ManagerSerializer
 
+    @action(detail=False, methods=['get'])
+    def me(self, request, pk=None):
+        m = Manager.objects.filter(user=request.user.id).first()
+        mngr = ManagerSerializer(m, context={'request': request})
+        return Response(mngr.data)
+
 class CustomerViewSet(viewsets.ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
 
     @action(detail=False, methods=['get'])
     def me(self, request,pk=None):
-        custmer=Customer.objects.filter(user=request.user).first()
+        custmer=Customer.objects.filter(user=request.user.id).first()
         c=CustomerSerializer(custmer,context={'request': request})
         return Response(c.data)

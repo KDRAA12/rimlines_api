@@ -8,7 +8,6 @@ class UserSerializer(CustomSerializer):
         model = User
         exclude = ('password','user_permissions','groups')
 
-
 class CustomerSerializer(CustomSerializer):
     user=UserSerializer(many=False, read_only=True)
     class Meta:
@@ -17,8 +16,8 @@ class CustomerSerializer(CustomSerializer):
 
 
 class ManagerSerializer(CustomSerializer):
+    user = UserSerializer(many=False, read_only=True)
     class Meta:
-        model = Manager
-        fields = '__all__'
-
+            model = Manager
+            fields = ['user', 'role']
 
