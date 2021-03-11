@@ -24,14 +24,11 @@ class TopUpViewSet(viewsets.ModelViewSet):
         # customer = CustomerSerializer(customer, context={"request": request})
         amount=request.data["amount"]
         if not customer:
-            print(customer)
             user=User(username=request.data["phone_number"],password=str(uuid4()),is_active=False)
             user.save()
             customer=Customer(user=user)
             customer.save()
-            print(customer)
-        print(customer)
-        m=Manager.objects.filter(user__username="root").first()
+        m=Manager.objects.filter(user__username=request.user.id).first()
         manager=ManagerSerializer(m,context={'request':request})
 
         topup=TopUp(maker=m,amount=amount,customer=customer,type="cash")
