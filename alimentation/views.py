@@ -18,37 +18,34 @@ class TopUpViewSet(viewsets.ModelViewSet):
     serializer_class = TopUpSerializer
     queryset = TopUp.objects.all()
 
-
     def create(self, request):
-        customer=Customer.objects.filter(user__username=request.data["phone_number"]).first()
+        customer = Customer.objects.filter(user__username=request.data["phone_number"]).first()
         # customer = CustomerSerializer(customer, context={"request": request})
-        amount=request.data["amount"]
+        amount = request.data["amount"]
         if not customer:
-            user=User(username=request.data["phone_number"],password=str(uuid4()),is_active=False)
+            user = User(username=request.data["phone_number"], password=str(uuid4()), is_active=False)
             user.save()
-            customer=Customer(user=user)
+            customer = Customer(user=user)
             customer.save()
-        m=Manager.objects.filter(user__username=request.user.id).first()
-        manager=ManagerSerializer(m,context={'request':request})
-
-        topup=TopUp(maker=m,amount=amount,customer=customer,type="cash")
+        m = Manager.objects.filter(user__username=request.user.id).first()
+        print(m.user.usename)
+        topup = TopUp(maker=m, amount=amount, customer=customer, type="cash")
         topup.save()
-        t=TopUpSerializer(topup,context={"request":request})
+        t = TopUpSerializer(topup, context={"request": request})
         return Response({'topup': t.data})
 
-
     @action(detail=False, methods=['get'])
-    def by_me(self, request,pk=None):
-        topups=TopUp.objects.filter(maker__user=request.user.id).all()
-        tpups=TopUpSerializer(topups,many=True,context={"request":request})
+    def by_me(self, request, pk=None):
+        topups = TopUp.objects.filter(maker__user=request.user.id).all()
+        tpups = TopUpSerializer(topups, many=True, context={"request": request})
         return Response(tpups.data)
 
     @action(detail=False, methods=['get'])
     def un_withdrawed(self, request, pk=None):
         topups = TopUp.objects.filter(withdrawed=False).all()
-        tpups = TopUpSerializer(topups, many=True,context={"request":request})
-        total=0
+        tpups = TopUpSerializer(topups, many=True, context={"request": request})
+        total = 0
         for topup in topups:
-            total+=topup.amount
+            total += topup.amount
 
-        return Response({"topups":tpups.data,"total":total})
+        return Response({"topups": tpups.data, "total": total})
