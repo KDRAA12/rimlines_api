@@ -1,8 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
 
-
-
 # Create your models here.
 from helpers import is_number
 
@@ -13,8 +11,8 @@ class Customer(models.Model):
         ('guest', 'GUEST'),
     )
     balance = models.FloatField(default=0)
-    user = models.OneToOneField(User,on_delete=models.CASCADE)
-    status = models.CharField(max_length=300, choices=CHOICES,blank=True,null=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    status = models.CharField(max_length=300, choices=CHOICES, blank=True, null=True)
 
     def __str__(self):
         return self.user.username
@@ -34,10 +32,8 @@ class Customer(models.Model):
 
 
 class Manager(models.Model):
-    CHOICES=(
-        ('deposit_agent','deposit_agent'),
-        ('collector','collector'),
+    CHOICES = (
+        ('deposit_agent', 'DEPOSIT_AGENT'),
     )
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     role = models.CharField(max_length=300, choices=CHOICES, blank=True, null=True)
-
