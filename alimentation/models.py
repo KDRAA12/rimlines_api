@@ -16,4 +16,4 @@ class TopUp(models.Model):
     type = models.CharField(max_length=300, choices=CHOICES, blank=True, null=True)
     withdrawed=models.BooleanField(default=False)
     def get_title(self):
-        return self.customer.user.username
+        return f'{self.customer.user.username}'
