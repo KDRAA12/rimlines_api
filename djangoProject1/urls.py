@@ -23,7 +23,7 @@ from custumers import urls as customer_urls
 from orders import urls as orders_urls
 
 urlpatterns = [
-    path('api/admin/', admin.site.urls),
+    path('admin/', admin.site.urls),
     path('alimentation/', include(alimentation_urls)),
     path('orders/', include(orders_urls)),
     path('customers/', include(customer_urls)),

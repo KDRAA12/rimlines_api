@@ -5,12 +5,7 @@ from helpers import CustomSerializer
 
 
 class TopUpSerializer(CustomSerializer):
-    title = serializers.CharField(source='get_title')
-
     class Meta:
         model=TopUp
         fields= '__all__'
-        read_only_fields = (
-            'title',
-        )
 

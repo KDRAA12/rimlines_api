@@ -14,6 +14,6 @@ class TopUp(models.Model):
     customer = models.ForeignKey('custumers.Customer', on_delete=models.SET_NULL, null=True)
     date = models.DateTimeField(default=datetime.now, blank=True)
     type = models.CharField(max_length=300, choices=CHOICES, blank=True, null=True)
-
+    withdrawed=models.BooleanField(default=False)
     def get_title(self):
         return self.customer.user.username
