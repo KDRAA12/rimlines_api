@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404
 from rest_framework import serializers, viewsets
@@ -14,9 +16,10 @@ class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
-    @action(detail=False, methods=['post'])
-    def product_updated(self, request, pk=None):
-        date=request.data['date']
+    @action(detail=False, methods=['get'],)
+    def after(self, request, pk=None):
+        timestamp=request.data['timestamp']
+        date = datetime.datetime.fromtimestamp(timestamp / 1e3)
         products=Product.objects.filter(Q(created_at__gte=date) | Q(created_at__gte=date)).all()
         product_serialized=ProductSerializer(products,many=True)
 
