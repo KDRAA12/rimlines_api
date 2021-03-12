@@ -1,6 +1,8 @@
+from django.db.models import Q
 from django.shortcuts import render, get_object_or_404
 from rest_framework import serializers, viewsets
 # Create your views here.
+from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from orders.models import Product, Refund, LineItem, Payment, Order
@@ -11,6 +13,14 @@ from orders.serializers import ProductSerializer, RefundSerializer, LineItemSeri
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+
+    @action(detail=False, methods=['post'])
+    def product_updated(self, request, pk=None):
+        date=request.data['date']
+        products=Product.objects.filter(Q(created_at__gte=date) | Q(created_at__gte=date)).all()
+        product_serialized=ProductSerializer(products,many=True)
+
+        return Response(product_serialized.data)
 
 
 #
