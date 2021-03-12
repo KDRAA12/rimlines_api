@@ -16,12 +16,14 @@ class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
-    @action(detail=False, methods=['get'],)
-    def after(self, request, pk=None):
-        timestamp=request.data['timestamp']
-        date = datetime.datetime.fromtimestamp(timestamp / 1e3)
-        products=Product.objects.filter(Q(created_at__gte=date) | Q(created_at__gte=date)).all()
-        product_serialized=ProductSerializer(products,many=True)
+    @action(detail=False, methods=['get'], )
+    def after(self, request, *args, **kwargs):
+        timestamp = int(request.query_params.get('timestamp'))
+        print(timestamp)
+        date = datetime.fromtimestamp(timestamp / 1e3)
+        print(date)
+        pds = Product.objects.filter(Q(created_at__gte=date) | Q(updated_at__gte=date)).all()
+        product_serialized = ProductSerializer(pds, many=True,context={'request': request})
 
         return Response(product_serialized.data)
 

@@ -26,7 +26,7 @@ class ManagerViewSet(viewsets.ModelViewSet):
         mngr = ManagerSerializer(m, context={'request': request})
         return Response(mngr.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=False, methods=['get'])
     def balance(self, request, pk=None):
         m = Manager.objects.filter(user=request.user.id).first()
         topups=TopUp.objects.filter(maker=m,withdrawed=False).all()
