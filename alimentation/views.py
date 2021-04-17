@@ -1,15 +1,11 @@
 from uuid import uuid5, uuid4
-
 from django.contrib.auth.models import User
-from django.shortcuts import render
-
-# Create your views here.
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
-
-from alimentation.models import TopUp
-from alimentation.serializers import TopUpSerializer
+from alimentation.models import TopUp, PendingTopUp
+from alimentation.serializers import TopUpSerializer, PendingTopUpSerializer
 from custumers.models import Customer, Manager
 from custumers.models_serializers import CustomerSerializer, ManagerSerializer, UserSerializer
 
@@ -18,7 +14,11 @@ class TopUpViewSet(viewsets.ModelViewSet):
     serializer_class = TopUpSerializer
     queryset = TopUp.objects.all()
 
+    # filter_backends = [OrderingFilter]
+    # ordering = ["-ordered_date"]
+
     def create(self, request):
+        print(f"r:{request.data}")
         customer = Customer.objects.filter(user__username=request.data["phone_number"]).first()
         # customer = CustomerSerializer(customer, context={"request": request})
         amount = request.data["amount"]
@@ -31,6 +31,9 @@ class TopUpViewSet(viewsets.ModelViewSet):
         print(m.user.username)
         topup = TopUp(maker=m, amount=amount, customer=customer, type="cash")
         topup.save()
+
+        customer.edit_balance(amount=amount, opperation="+")
+        print(f"m.user.username {customer.balance}")
         t = TopUpSerializer(topup, context={"request": request})
         return Response({'topup': t.data})
 
@@ -47,5 +50,5 @@ class TopUpViewSet(viewsets.ModelViewSet):
         total = 0
         for topup in topups:
             total += topup.amount
-
         return Response({"topups": tpups.data, "total": total})
+

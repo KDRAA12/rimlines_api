@@ -20,28 +20,26 @@ class ManagerViewSet(viewsets.ModelViewSet):
     queryset = Manager.objects.all()
     serializer_class = ManagerSerializer
 
-    @action(detail=False, methods=['get'])
+    @action(detail=True, methods=['get'])
     def me(self, request, pk=None):
-        m = Manager.objects.filter(user=request.user.id).first()
+        m = Manager.objects.filter(user__id=pk).first()
         mngr = ManagerSerializer(m, context={'request': request})
         return Response(mngr.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=True, methods=['get'])
     def balance(self, request, pk=None):
-        m = Manager.objects.filter(user=request.user.id).first()
+        m = Manager.objects.filter(user__id=pk).first()
         topups=TopUp.objects.filter(maker=m,withdrawed=False).all()
 
         total = 0
         for topup in topups:
-            total+=TopUp.amount
+            total+= topup.amount
 
         return Response({'total': total})
 
 
 
 
-        mngr = ManagerSerializer(m, context={'request': request})
-        return Response(mngr.data)
 
 
 
@@ -49,8 +47,9 @@ class CustomerViewSet(viewsets.ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
 
-    @action(detail=False, methods=['get'])
+    @action(detail=True, methods=['get'])
     def me(self, request,pk=None):
-        custmer=Customer.objects.filter(user=request.user.id).first()
+        custmer=Customer.objects.filter(user=pk).first()
         c=CustomerSerializer(custmer,context={'request': request})
         return Response(c.data)
+

@@ -14,6 +14,13 @@ class TopUp(models.Model):
     customer = models.ForeignKey('custumers.Customer', on_delete=models.SET_NULL, null=True)
     date = models.DateTimeField(default=datetime.now, blank=True)
     type = models.CharField(max_length=300, choices=CHOICES, blank=True, null=True)
-    withdrawed=models.BooleanField(default=False)
-    def get_title(self):
-        return f'{self.customer.user.username}'
+    withdrawed = models.BooleanField(default=False)
+
+
+class PendingTopUp(models.Model):
+    Agent = models.ForeignKey('custumers.Manager', on_delete=models.SET_NULL, null=True)
+    phone = models.BigIntegerField()
+    date = models.DateTimeField()
+    Amount = models.FloatField()
+    Note = models.TextField()
+    status=models.ModelChoiceField

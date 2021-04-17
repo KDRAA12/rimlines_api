@@ -11,7 +11,7 @@ class LineItem(models.Model):
     product = models.ForeignKey('Product', on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"{self.quantity} of {self.item.title}"
+        return f"{self.quantity} of {self.product.title}"
 
     @property
     def get_total_item_price(self):
@@ -108,3 +108,16 @@ class Payment(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     amount = models.FloatField(default=get_amount)
     sold_after = models.FloatField(default=get_sold)
+
+
+class Report(models.Model):
+    LEVELS=(
+        (0,"MONNEY DIDN'T ARRIVE"),
+        (1,"Transaction is incomplete"),
+        (2,"false credentials"),
+        (3,"to every one")
+    )
+    maker=models.ForeignKey('custumers.Manager',on_delete=models.CASCADE)
+    message=models.TextField()
+    order=models.ForeignKey('orders.Order',on_delete=models.CASCADE,null=True,blank=True)
+    level = models.PositiveSmallIntegerField(choices=LEVELS,default=3,)

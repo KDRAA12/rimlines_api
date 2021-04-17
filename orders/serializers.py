@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from helpers import CustomSerializer
-from orders.models import Product, Order, Payment, LineItem, Refund
+from orders.models import Product, Order, Payment, LineItem, Refund, Report
 
 
 class ProductSerializer(CustomSerializer):
@@ -33,3 +33,7 @@ class RefundSerializer(CustomSerializer):
         model=Refund
         fields='__all__'
 
+class ReportSerializer(CustomSerializer):
+    class Meta:
+        model=Report
+        fields='__all__'

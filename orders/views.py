@@ -2,14 +2,17 @@ from datetime import datetime
 
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import OrderingFilter
+
 from rest_framework import serializers, viewsets
 # Create your views here.
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from orders.models import Product, Refund, LineItem, Payment, Order
+from orders.models import Product, Refund, LineItem, Payment, Order, Report
 from orders.serializers import ProductSerializer, RefundSerializer, LineItemSerializer, PaymentSerializer, \
-    OrderSerializer
+    OrderSerializer, ReportSerializer
 
 
 class ProductViewSet(viewsets.ModelViewSet):
@@ -67,3 +70,19 @@ class PaymentViewSet(viewsets.ModelViewSet):
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
+    # filter_backends=[OrderingFilter]
+    # ordering=["-ordered_date"]
+
+class ReportViewSet(viewsets.ModelViewSet):
+    serializer_class = ReportSerializer
+    queryset = Report.objects.all()
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['order', 'level','report','maker']
+
+    def perform_create(self, serializer):
+        order=Order.objects.filter(id=self.request.data["order"]).first()
+        l=self.request.data['level'] if self.request.data['level'] else 1
+        report=Report(maker=self.request.user,order=order,message=self.request.data["message"],level=l)
+        report.save()
+        r=ReportSerializer(report)
+        return r.data
