@@ -73,6 +73,7 @@ class Order(models.Model):
     refund_requested = models.BooleanField(default=False)
     refund_granted = models.BooleanField(default=False)
     status = models.CharField(max_length=300, choices=CHOICES, blank=True, null=True)
+    goods = models.ManyToManyField('good')
 
     @property
     def total_price(self):
@@ -89,6 +90,19 @@ class Order(models.Model):
         return total
 
     # add a pay order method
+
+
+class Media(models.Model):
+    alt = models.TextField()
+    image = models.TextField()
+
+
+class Good(models.Model):
+    images = models.ManyToManyField('Media',null=True,blank=True)
+    note = models.TextField(null=True,blank=True)
+    product = models.ForeignKey("Product", on_delete=models.SET_NULL, null=True)
+    is_used = models.BooleanField(default=False)
+    opening_date = models.DateTimeField(null=True,blank=True)
 
 
 class Refund(models.Model):
@@ -111,13 +125,13 @@ class Payment(models.Model):
 
 
 class Report(models.Model):
-    LEVELS=(
-        (0,"MONNEY DIDN'T ARRIVE"),
-        (1,"Transaction is incomplete"),
-        (2,"false credentials"),
-        (3,"to every one")
+    LEVELS = (
+        (0, "MONNEY DIDN'T ARRIVE"),
+        (1, "Transaction is incomplete"),
+        (2, "false credentials"),
+        (3, "to every one")
     )
-    maker=models.ForeignKey('custumers.Manager',on_delete=models.CASCADE)
-    message=models.TextField()
-    order=models.ForeignKey('orders.Order',on_delete=models.CASCADE,null=True,blank=True)
-    level = models.PositiveSmallIntegerField(choices=LEVELS,default=3,)
+    maker = models.ForeignKey('custumers.Manager', on_delete=models.CASCADE)
+    message = models.TextField()
+    order = models.ForeignKey('orders.Order', on_delete=models.CASCADE, null=True, blank=True)
+    level = models.PositiveSmallIntegerField(choices=LEVELS, default=3, )

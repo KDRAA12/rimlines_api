@@ -10,9 +10,9 @@ from rest_framework import serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from orders.models import Product, Refund, LineItem, Payment, Order, Report
+from orders.models import Product, Refund, LineItem, Payment, Order, Report, Good, Media
 from orders.serializers import ProductSerializer, RefundSerializer, LineItemSerializer, PaymentSerializer, \
-    OrderSerializer, ReportSerializer
+    OrderSerializer, ReportSerializer, GoodSerializer
 
 
 class ProductViewSet(viewsets.ModelViewSet):
@@ -26,7 +26,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         date = datetime.fromtimestamp(timestamp / 1e3)
         print(date)
         pds = Product.objects.filter(Q(created_at__gte=date) | Q(updated_at__gte=date)).all()
-        product_serialized = ProductSerializer(pds, many=True,context={'request': request})
+        product_serialized = ProductSerializer(pds, many=True, context={'request': request})
 
         return Response(product_serialized.data)
 
@@ -70,19 +70,53 @@ class PaymentViewSet(viewsets.ModelViewSet):
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
+
     # filter_backends=[OrderingFilter]
     # ordering=["-ordered_date"]
+
+    @action(detail=True, methods=['get'])
+    def add_goods(self, request, pk=None):
+        goods = request.data["goods"]
+        order = Order.objects.get(pk)
+        order.goods = goods
+        order.save()
+        o = OrderSerializer(order)
+        return o.data
+
 
 class ReportViewSet(viewsets.ModelViewSet):
     serializer_class = ReportSerializer
     queryset = Report.objects.all()
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['order', 'level','report','maker']
+    filterset_fields = ['order', 'level', 'report', 'maker']
 
     def perform_create(self, serializer):
-        order=Order.objects.filter(id=self.request.data["order"]).first()
-        l=self.request.data['level'] if self.request.data['level'] else 1
-        report=Report(maker=self.request.user,order=order,message=self.request.data["message"],level=l)
+        order = Order.objects.filter(id=self.request.data["order"]).first()
+        l = self.request.data['level'] if self.request.data['level'] else 1
+        report = Report(maker=self.request.user, order=order, message=self.request.data["message"], level=l)
         report.save()
-        r=ReportSerializer(report)
+        r = ReportSerializer(report)
         return r.data
+
+
+class GoodViewSet(viewsets.ModelViewSet):
+    serializer_class = GoodSerializer
+    queryset = Good.objects.all()
+
+    def perform_create(self, serializer):
+
+        ims=[]
+        if "ims" in self.request.data:
+            for image in self.request.data["ims"]:
+                i = Media(image=image)
+                i.save()
+                ims.append(i)
+        # is_used=False if 'is_used' not in self.request.data else self.request.data['is_used']
+        p=Product.objects.filter(id=self.request.data['product']).first()
+        g=Good(product=p,note=self.request.data['note'],is_used=True)
+        g.save()
+        g.images.set(ims)
+        g_s=GoodSerializer(g)
+        return g_s.data
+
+

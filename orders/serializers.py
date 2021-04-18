@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from helpers import CustomSerializer
-from orders.models import Product, Order, Payment, LineItem, Refund, Report
+from orders.models import Product, Order, Payment, LineItem, Refund, Report, Good
 
 
 class ProductSerializer(CustomSerializer):
@@ -13,6 +13,11 @@ class ProductSerializer(CustomSerializer):
 class OrderSerializer(CustomSerializer):
     class Meta:
         model=Order
+        fields='__all__'
+
+class GoodSerializer(CustomSerializer):
+    class Meta:
+        model=Good
         fields='__all__'
 
 

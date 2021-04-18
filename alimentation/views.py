@@ -4,8 +4,8 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
-from alimentation.models import TopUp, PendingTopUp
-from alimentation.serializers import TopUpSerializer, PendingTopUpSerializer
+from alimentation.models import TopUp
+from alimentation.serializers import TopUpSerializer
 from custumers.models import Customer, Manager
 from custumers.models_serializers import CustomerSerializer, ManagerSerializer, UserSerializer
 
