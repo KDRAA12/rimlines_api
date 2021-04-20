@@ -94,7 +94,7 @@ class Order(models.Model):
 
 class Media(models.Model):
     alt = models.TextField()
-    image = models.TextField()
+    image = models.ImageField(upload_to='goods')
 
 
 class Good(models.Model):

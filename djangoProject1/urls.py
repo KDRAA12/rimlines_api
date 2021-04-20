@@ -18,7 +18,8 @@ from rest_framework.authtoken import views
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-
+from django.conf import settings
+from django.conf.urls.static import static
 from alimentation import urls as alimentation_urls
 from custumers import urls as customer_urls
 from orders import urls as orders_urls
@@ -28,8 +29,10 @@ urlpatterns = [
     path('alimentation/', include(alimentation_urls)),
     path('orders/', include(orders_urls)),
     path('customers/', include(customer_urls)),
-path('api-token-auth/', views.obtain_auth_token),
+    path('api-token-auth/', views.obtain_auth_token),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
 ]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

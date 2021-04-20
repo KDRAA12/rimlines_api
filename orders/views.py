@@ -1,18 +1,23 @@
+import io
 from datetime import datetime
+from uuid import uuid4
+from wsgiref import headers
 
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 
-from rest_framework import serializers, viewsets
+from rest_framework import serializers, viewsets, status
 # Create your views here.
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from helpers import decodeDesignImage
 from orders.models import Product, Refund, LineItem, Payment, Order, Report, Good, Media
 from orders.serializers import ProductSerializer, RefundSerializer, LineItemSerializer, PaymentSerializer, \
-    OrderSerializer, ReportSerializer, GoodSerializer
+    OrderSerializer, ReportSerializer, GoodSerializer, MediaSerializer
 
 
 class ProductViewSet(viewsets.ModelViewSet):
@@ -75,13 +80,16 @@ class OrderViewSet(viewsets.ModelViewSet):
     # ordering=["-ordered_date"]
 
     @action(detail=True, methods=['get'])
-    def add_goods(self, request, pk=None):
+    def resolve(self, request, pk=None):
         goods = request.data["goods"]
-        order = Order.objects.get(pk)
-        order.goods = goods
+        order = Order.objects.filter(id=pk).first()
+        print(f"pk:{pk}")
+        order.goods.set(goods)
+        print(goods)
         order.save()
         o = OrderSerializer(order)
-        return o.data
+        headers = self.get_success_headers(o.data)
+        return Response(o.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class ReportViewSet(viewsets.ModelViewSet):
@@ -90,7 +98,7 @@ class ReportViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['order', 'level', 'report', 'maker']
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
         order = Order.objects.filter(id=self.request.data["order"]).first()
         l = self.request.data['level'] if self.request.data['level'] else 1
         report = Report(maker=self.request.user, order=order, message=self.request.data["message"], level=l)
@@ -103,20 +111,28 @@ class GoodViewSet(viewsets.ModelViewSet):
     serializer_class = GoodSerializer
     queryset = Good.objects.all()
 
-    def perform_create(self, serializer):
-
-        ims=[]
+    def create(self, request, *args, **kwargs):
+        p = Product.objects.filter(id=self.request.data['product']).first()
+        g = Good(product=p, note=self.request.data['note'], is_used=True)
+        g.save()
+        ims = []
         if "ims" in self.request.data:
             for image in self.request.data["ims"]:
-                i = Media(image=image)
-                i.save()
-                ims.append(i)
+                data = {'image': image, 'alt': 'dd'}
+                m = MediaSerializer(data=data)
+                if m.is_valid():
+                    l = m.save()
+                    g.images.add(l.id)
+                    g.save()
+
         # is_used=False if 'is_used' not in self.request.data else self.request.data['is_used']
-        p=Product.objects.filter(id=self.request.data['product']).first()
-        g=Good(product=p,note=self.request.data['note'],is_used=True)
-        g.save()
-        g.images.set(ims)
         g_s=GoodSerializer(g)
-        return g_s.data
+        print(g_s.data)
+        headers = self.get_success_headers(g_s.data)
+
+        return Response(g_s.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
+class MediaViewSet(viewsets.ModelViewSet):
+    serializer_class = MediaSerializer
+    queryset = Media.objects.all()
