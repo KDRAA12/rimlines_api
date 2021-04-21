@@ -1,15 +1,9 @@
-import io
 from datetime import datetime
-from uuid import uuid4
-from wsgiref import headers
-
-from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db.models import Q
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import OrderingFilter
 
-from rest_framework import serializers, viewsets, status
+from rest_framework import viewsets, status
 # Create your views here.
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -26,10 +20,9 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], )
     def after(self, request, *args, **kwargs):
+        # todo:add header
         timestamp = int(request.query_params.get('timestamp'))
-        print(timestamp)
         date = datetime.fromtimestamp(timestamp / 1e3)
-        print(date)
         pds = Product.objects.filter(Q(created_at__gte=date) | Q(updated_at__gte=date)).all()
         product_serialized = ProductSerializer(pds, many=True, context={'request': request})
 
@@ -62,9 +55,10 @@ class PaymentViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentSerializer
 
     def perform_create(self, serializer):
+        # todo:add headers
         order = get_object_or_404(Order, self.request.data['order'])
         status = order.owner.edit_balance(order.total_price, "-")
-        if status["success"] == True:
+        if status["success"]:
             payment = Payment(order=order)
             payment.save()
             return payment
@@ -79,13 +73,27 @@ class OrderViewSet(viewsets.ModelViewSet):
     # filter_backends=[OrderingFilter]
     # ordering=["-ordered_date"]
 
+    def create(self, request, *args, **kwargs):
+        _o = OrderSerializer(data=request.data)
+        if _o.is_valid():
+            o = _o.save()
+            # for i in o.items:
+            # gd = Good.objects.filter(product=o.product,is_used=False,product__require_manual_activation=False).first()
+            # if gd:
+            #     o.
+
     @action(detail=True, methods=['get'])
     def resolve(self, request, pk=None):
+        # todo:sanitize this shit
         goods = request.data["goods"]
+        gds = []
+        for gd in goods:
+            gd = Good.objects.filter(id=gd).first()
+            if gd:
+                gds.append(gd)
+
         order = Order.objects.filter(id=pk).first()
-        print(f"pk:{pk}")
-        order.goods.set(goods)
-        print(goods)
+        order.goods.set(gds)
         order.save()
         o = OrderSerializer(order)
         headers = self.get_success_headers(o.data)
@@ -113,7 +121,8 @@ class GoodViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         p = Product.objects.filter(id=self.request.data['product']).first()
-        g = Good(product=p, note=self.request.data['note'], is_used=True)
+        is_used = False if 'is_used' not in self.request.data else self.request.data['is_used']
+        g = Good(product=p, note=self.request.data['note'], is_used=is_used)
         g.save()
         ims = []
         if "ims" in self.request.data:
@@ -125,8 +134,7 @@ class GoodViewSet(viewsets.ModelViewSet):
                     g.images.add(l.id)
                     g.save()
 
-        # is_used=False if 'is_used' not in self.request.data else self.request.data['is_used']
-        g_s=GoodSerializer(g)
+        g_s = GoodSerializer(g)
         print(g_s.data)
         headers = self.get_success_headers(g_s.data)
 

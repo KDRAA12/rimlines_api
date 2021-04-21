@@ -16,7 +16,7 @@ class CustomerSerializer(CustomSerializer):
 
 
 class ManagerSerializer(CustomSerializer):
-    user = UserSerializer(many=False, read_only=True)
+    user = UserSerializer(read_only=True)
     class Meta:
             model = Manager
             fields = ['user', 'role']
