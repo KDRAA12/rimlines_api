@@ -46,6 +46,8 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     require_manual_activation = models.BooleanField(default=True)
+    stock = models.PositiveSmallIntegerField(default=0)
+
     def __str__(self):
         return self.title
 
@@ -59,20 +61,16 @@ class Product(models.Model):
 
 class Order(models.Model):
     CHOICES = (
-        ('refund_requested', 'REFUND_REQUESTED'),
-        ('REFUND_GRANTED', 'REFUND_GRANTED'),
-        ('pending', 'PENDING'),
-        ('Delivered', 'DELIVERED')
+        (-2, 'REQUEST REFUND'),
+        (-1, 'REFUND GRANTED'),
+        (0, 'PRODUCT NEED RESTOCK'),
+        (1, 'AGENT NEEDED FOR ACTIVATION'),
+        (2, 'ORDER  COMPLETED'),
     )
     owner = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='orders')
     items = models.ManyToManyField('LineItem')
     ordered_date = models.DateTimeField(auto_now_add=True)
-    ordered = models.BooleanField(default=False)
-    being_delivered = models.BooleanField(default=False)
-    received = models.BooleanField(default=False)
-    refund_requested = models.BooleanField(default=False)
-    refund_granted = models.BooleanField(default=False)
-    status = models.CharField(max_length=300, choices=CHOICES, blank=True, null=True)
+    status = models.CharField(max_length=300,choices=CHOICES, blank=True, null=True)
     goods = models.ManyToManyField('good')
 
     @property
@@ -98,11 +96,11 @@ class Media(models.Model):
 
 
 class Good(models.Model):
-    images = models.ManyToManyField('Media',null=True,blank=True)
-    note = models.TextField(null=True,blank=True)
+    images = models.ManyToManyField('Media')
+    note = models.TextField(null=True, blank=True)
     product = models.ForeignKey("Product", on_delete=models.SET_NULL, null=True)
     is_used = models.BooleanField(default=False)
-    opening_date = models.DateTimeField(null=True,blank=True)
+    opening_date = models.DateTimeField(null=True, blank=True)
 
 
 class Refund(models.Model):

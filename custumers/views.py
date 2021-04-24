@@ -1,11 +1,7 @@
 from django.contrib.auth.models import User
-from django.shortcuts import render
-
-# Create your views here.
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
 from alimentation.models import TopUp
 from custumers.models import Manager, Customer
 from custumers.models_serializers import ManagerSerializer, CustomerSerializer, UserSerializer
@@ -22,7 +18,6 @@ class ManagerViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def me(self, request, pk=None):
-        print(request.user)
         m = Manager.objects.filter(user=request.user).first()
         mngr = ManagerSerializer(m, context={'request': request})
         return Response(mngr.data)
@@ -38,7 +33,7 @@ class ManagerViewSet(viewsets.ModelViewSet):
 
         return Response({'total': total})
 
-
+    #todo:we should ad away to reterive money from each agent
 class CustomerViewSet(viewsets.ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer

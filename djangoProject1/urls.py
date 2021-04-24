@@ -22,6 +22,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from alimentation import urls as alimentation_urls
 from custumers import urls as customer_urls
+from helpers import custom404
 from orders import urls as orders_urls
 
 urlpatterns = [
@@ -34,5 +35,9 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
 ]
+handler404 = custom404
+handler500 = 'rest_framework.exceptions.server_error'
+handler400 = 'rest_framework.exceptions.bad_request'
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -25,10 +25,9 @@ class Customer(models.Model):
             elif opperation == "-":
                 self.balance -= float(amount)
             self.save()
-            return {'success': True}
+            return True
         else:
-            print("n")
-            return {'success': False}
+            return False
 
 
 class Manager(models.Model):

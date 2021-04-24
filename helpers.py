@@ -56,3 +56,13 @@ class Base64ImageField(serializers.ImageField):
             id = uuid.uuid4()
             data = ContentFile(base64.b64decode(imgstr), name = id.urn[9:] + '.' + ext)
         return super(Base64ImageField, self).to_internal_value(data)
+
+
+from django.http import JsonResponse
+
+
+def custom404(request, exception=None):
+    return JsonResponse({
+        'status_code': 404,
+        'error': 'The resource was not found'
+    })

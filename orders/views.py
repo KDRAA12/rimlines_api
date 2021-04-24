@@ -54,51 +54,86 @@ class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
 
-    def perform_create(self, serializer):
-        # todo:add headers
-        order = get_object_or_404(Order, self.request.data['order'])
-        status = order.owner.edit_balance(order.total_price, "-")
-        if status["success"]:
-            payment = Payment(order=order)
-            payment.save()
-            return payment
-        else:
-            return Response(status)
-
 
 class OrderViewSet(viewsets.ModelViewSet):
+    # todo:do we make partial order resolving?
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 
     # filter_backends=[OrderingFilter]
     # ordering=["-ordered_date"]
 
+    def make_payment(self, order):
+        if order.owner.edit_balance(order.total_price, "-"):
+            p = Payment(amount=order.total_price, order=order)
+            p.save()
+            return True
+        return False
+
     def create(self, request, *args, **kwargs):
         _o = OrderSerializer(data=request.data)
         if _o.is_valid():
-            o = _o.save()
-            # for i in o.items:
-            # gd = Good.objects.filter(product=o.product,is_used=False,product__require_manual_activation=False).first()
-            # if gd:
-            #     o.
+            order = _o.save(commit=False)
+            if not self.make_payment(order):
+                return Response({"success": False, "message": "Not enough Balance"})
+            order.save()
+            goods = []
+
+            for item in order.items:
+                # todo:heavy testing
+                gd = Good.objects.filter(product=item.product, product__stock__gte=item.quantity, is_used=False,
+                                         product__require_manual_activation=False).all()[:item.quantity]
+                if gd:
+                    goods.append(gd)
+                else:
+                    if item.product.require_manual_activation:
+                        print("ALERT Agent to resolve it")
+                        print("Stock not enough to automaticaly resole order")
+                        order.status = 1
+
+                    elif item.product.stock >= item.quantity:
+                        print("ALERT ADMIN")
+                        print("Stock not enough to automaticaly resole order")
+
+                        order.status = 0
+
+                    elif not Good.objects.filter(product=item.product, is_used=False).all():
+                        print("ALERT ADMIN")
+                        print("Product not in Stock")
+
+                        order.status = 0
+
+                    order.save()
+                    _o = OrderSerializer(order)
+                    headers = self.get_success_headers(_o.data)
+                    return Response(_o.data, status=status.HTTP_201_CREATED, headers=headers)
+
+            order.goods.set(goods)
+            order.status = 2
+            order.save()
+            _o = OrderSerializer(order)
+            headers = self.get_success_headers(_o.data)
+            return Response(_o.data, status=status.HTTP_201_CREATED, headers=headers)
 
     @action(detail=True, methods=['get'])
     def resolve(self, request, pk=None):
-        # todo:sanitize this shit
         goods = request.data["goods"]
         gds = []
         for gd in goods:
-            gd = Good.objects.filter(id=gd).first()
+            gd = Good.objects.get(id=gd)
             if gd:
                 gds.append(gd)
 
-        order = Order.objects.filter(id=pk).first()
+        order = Order.objects.get(id=pk)
         order.goods.set(gds)
         order.save()
         o = OrderSerializer(order)
         headers = self.get_success_headers(o.data)
         return Response(o.data, status=status.HTTP_201_CREATED, headers=headers)
 
+    @action(detail=True, methods=['get'])
+    def cancel_order(self,request,pk=None):
+        pass
 
 class ReportViewSet(viewsets.ModelViewSet):
     serializer_class = ReportSerializer
