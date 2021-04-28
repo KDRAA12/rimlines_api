@@ -3,6 +3,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 
 # Create your models here.
 from custumers.models import Customer
+from helpers import alert
 
 
 class LineItem(models.Model):
@@ -15,33 +16,32 @@ class LineItem(models.Model):
 
     @property
     def get_total_item_price(self):
-        return self.quantity * self.item.price
+        return self.quantity * self.product.price
 
     @property
     def get_total_discount_item_price(self):
-        return self.quantity * self.item.discount_price
+        return self.quantity * self.product.discount_price
 
     @property
     def get_amount_saved(self):
-        return self.get_total_item_price() - self.get_total_discount_item_price()
+        return self.get_total_item_price - self.get_total_discount_item_price
 
     @property
     def get_final_price(self):
-        if self.item.discount_price:
-            return self.get_total_discount_item_price()
-        return self.get_total_item_price()
+        if self.product.discount_price:
+            return self.get_total_discount_item_price
+        return self.get_total_item_price
 
 
 class Product(models.Model):
     title = models.CharField(max_length=100)
     price = models.FloatField()
-    buying_price = models.FloatField()
     discount_price = models.FloatField(blank=True, null=True)
     slug = models.SlugField()
     '''to be changed to a default'''
     description = models.TextField()
     main_image = models.ImageField()
-    rating = models.FloatField(validators=[MaxValueValidator(5.0), MinValueValidator(0.0)])
+    rating = models.FloatField(validators=[MaxValueValidator(5.0), MinValueValidator(0.0)], default=0)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -58,6 +58,13 @@ class Product(models.Model):
         else:
             return self.price
 
+    def decrement(self, quantity=1):
+        if self.stock >= quantity:
+            self.stock -= quantity
+            self.save()
+        if self.stock < 2:
+            alert(f"{self.title}", "is out of stock")
+
 
 class Order(models.Model):
     CHOICES = (
@@ -70,14 +77,14 @@ class Order(models.Model):
     owner = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='orders')
     items = models.ManyToManyField('LineItem')
     ordered_date = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=300,choices=CHOICES, blank=True, null=True)
-    goods = models.ManyToManyField('good')
+    status = models.SmallIntegerField( choices=CHOICES, blank=True, null=True)
+    goods = models.ManyToManyField('good',default=[])
 
     @property
     def total_price(self):
         total = 0
         for order_item in self.items.all():
-            total += order_item.get_final_price()
+            total += order_item.get_final_price
         return total
 
     @property
@@ -96,11 +103,18 @@ class Media(models.Model):
 
 
 class Good(models.Model):
+    CHOICES = (
+        ("SENT", "sent"),
+        ("OPENED", "opened"),
+        ("UNUSED", "unused"),
+    )
     images = models.ManyToManyField('Media')
     note = models.TextField(null=True, blank=True)
     product = models.ForeignKey("Product", on_delete=models.SET_NULL, null=True)
-    is_used = models.BooleanField(default=False)
     opening_date = models.DateTimeField(null=True, blank=True)
+    delivery_date = models.DateTimeField(null=True, blank=True)
+    adding_date = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(choices=CHOICES, default="UNUSED", max_length=300)
 
 
 class Refund(models.Model):
@@ -118,8 +132,8 @@ class Payment(models.Model):
 
     order = models.ForeignKey(Order, on_delete=models.CASCADE, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-    amount = models.FloatField(default=get_amount)
-    sold_after = models.FloatField(default=get_sold)
+    amount = models.FloatField()
+    sold_after = models.FloatField()
 
 
 class Report(models.Model):

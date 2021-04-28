@@ -7,6 +7,7 @@ from orders.models import Product, Order, Payment, LineItem, Refund, Report, Goo
 
 
 class ProductSerializer(CustomSerializer):
+    main_image = Base64ImageField(required=True)
     class Meta:
         model=Product
         fields='__all__'

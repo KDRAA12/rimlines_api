@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -8,7 +8,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from helpers import decodeDesignImage
+from helpers import decodeDesignImage, get_lines_items
 from orders.models import Product, Refund, LineItem, Payment, Order, Report, Good, Media
 from orders.serializers import ProductSerializer, RefundSerializer, LineItemSerializer, PaymentSerializer, \
     OrderSerializer, ReportSerializer, GoodSerializer, MediaSerializer
@@ -65,55 +65,58 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     def make_payment(self, order):
         if order.owner.edit_balance(order.total_price, "-"):
-            p = Payment(amount=order.total_price, order=order)
+            p = Payment(amount=order.total_price, order=order, sold_after=order.owner.balance)
             p.save()
             return True
         return False
 
     def create(self, request, *args, **kwargs):
+        if "items" in request.data:
+            request.data["items"] = get_lines_items(request.data["items"])
+        else:
+            return Response({"error": "empty orders"})
         _o = OrderSerializer(data=request.data)
+
         if _o.is_valid():
-            order = _o.save(commit=False)
+            order = _o.save()
+
             if not self.make_payment(order):
+                order.delete()
                 return Response({"success": False, "message": "Not enough Balance"})
-            order.save()
             goods = []
-
-            for item in order.items:
-                # todo:heavy testing
-                gd = Good.objects.filter(product=item.product, product__stock__gte=item.quantity, is_used=False,
-                                         product__require_manual_activation=False).all()[:item.quantity]
-                if gd:
-                    goods.append(gd)
-                else:
-                    if item.product.require_manual_activation:
-                        print("ALERT Agent to resolve it")
-                        print("Stock not enough to automaticaly resole order")
-                        order.status = 1
-
-                    elif item.product.stock >= item.quantity:
-                        print("ALERT ADMIN")
-                        print("Stock not enough to automaticaly resole order")
-
-                        order.status = 0
-
-                    elif not Good.objects.filter(product=item.product, is_used=False).all():
-                        print("ALERT ADMIN")
-                        print("Product not in Stock")
-
-                        order.status = 0
-
-                    order.save()
+            for item in order.items.all():
+                if item.product.require_manual_activation:
+                    print(f"ORDER {order.id} STATUS Require manual activation")
+                    order.status = 1
                     _o = OrderSerializer(order)
                     headers = self.get_success_headers(_o.data)
                     return Response(_o.data, status=status.HTTP_201_CREATED, headers=headers)
 
+                gds = Good.objects.filter(product=item.product, status="UNUSED").all()[:item.quantity]
+
+                if not gds:
+
+                    if gds.count() ==0:
+                        print("product not in stock")
+                    else:
+                        print("there is not enough goods")
+
+                    order.status = 0
+                    order.save()
+                    _o = OrderSerializer(order)
+                    headers = self.get_success_headers(_o.data)
+                    return Response(_o.data, status=status.HTTP_201_CREATED, headers=headers)
+                for good in gds:
+                    good.status="SENT"
+                    good.save()
+                    goods.append(good.id)
             order.goods.set(goods)
             order.status = 2
             order.save()
             _o = OrderSerializer(order)
             headers = self.get_success_headers(_o.data)
             return Response(_o.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(_o.errors)
 
     @action(detail=True, methods=['get'])
     def resolve(self, request, pk=None):
@@ -122,18 +125,23 @@ class OrderViewSet(viewsets.ModelViewSet):
         for gd in goods:
             gd = Good.objects.get(id=gd)
             if gd:
+                gd.status = "SENT"
+                gd.product.decrement()
+                gd.delivery_date = datetime.now()
                 gds.append(gd)
 
         order = Order.objects.get(id=pk)
         order.goods.set(gds)
+
         order.save()
         o = OrderSerializer(order)
         headers = self.get_success_headers(o.data)
         return Response(o.data, status=status.HTTP_201_CREATED, headers=headers)
 
     @action(detail=True, methods=['get'])
-    def cancel_order(self,request,pk=None):
+    def cancel_order(self, request, pk=None):
         pass
+
 
 class ReportViewSet(viewsets.ModelViewSet):
     serializer_class = ReportSerializer
@@ -156,9 +164,11 @@ class GoodViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         p = Product.objects.filter(id=self.request.data['product']).first()
-        is_used = False if 'is_used' not in self.request.data else self.request.data['is_used']
-        g = Good(product=p, note=self.request.data['note'], is_used=is_used)
+        note = self.request.data['note'] if 'note' in request.data else ""
+        g = Good(product=p, note=note)
         g.save()
+        p.stock += 1
+        p.save()
         ims = []
         if "ims" in self.request.data:
             for image in self.request.data["ims"]:
@@ -174,6 +184,16 @@ class GoodViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(g_s.data)
 
         return Response(g_s.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def retrieve(self, request, pk=None):
+        queryset = Good.objects.all()
+        good = get_object_or_404(queryset, pk=pk)
+        if good.status == "SENT":
+            good.status = "OPENED"
+            good.opening_date = datetime.now()
+            good.save()
+        serializer = GoodSerializer(good)
+        return Response(serializer.data)
 
 
 class MediaViewSet(viewsets.ModelViewSet):

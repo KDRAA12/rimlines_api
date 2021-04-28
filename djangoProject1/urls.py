@@ -27,7 +27,7 @@ from orders import urls as orders_urls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('alimentation/', include(alimentation_urls)),
+    path('topups/', include(alimentation_urls)),
     path('orders/', include(orders_urls)),
     path('customers/', include(customer_urls)),
     path('api-token-auth/', views.obtain_auth_token),

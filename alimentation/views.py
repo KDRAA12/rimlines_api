@@ -21,19 +21,24 @@ class TopUpViewSet(viewsets.ModelViewSet):
         print(f"r:{request.data}")
         customer = Customer.objects.filter(user__username=request.data["phone_number"]).first()
         # customer = CustomerSerializer(customer, context={"request": request})
-        amount = request.data["amount"]
+        try:
+            amount = int(request.data["amount"])
+        except:
+            return Response({'error': "amount is not a number"})
+
+        if amount<1:
+            return Response({'error': "amount is less than one"})
+
         if not customer:
             user = User(username=request.data["phone_number"], password=str(uuid4()), is_active=False)
             user.save()
             customer = Customer(user=user)
             customer.save()
         m = Manager.objects.filter(user__username=request.user.username).first()
-        print(m.user.username)
         topup = TopUp(maker=m, amount=amount, customer=customer, type="cash")
         topup.save()
 
         customer.edit_balance(amount=amount, opperation="+")
-        print(f"m.user.username {customer.balance}")
         t = TopUpSerializer(topup, context={"request": request})
         return Response({'topup': t.data})
 

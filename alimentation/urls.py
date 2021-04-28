@@ -5,7 +5,7 @@ from orders.views import PaymentViewSet
 
 router =routers.SimpleRouter()
 
-router.register(r'topup',TopUpViewSet)
+router.register(r'',TopUpViewSet)
 
 urlpatterns = router.urls
 

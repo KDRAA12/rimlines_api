@@ -1,8 +1,10 @@
+from rest_framework.generics import get_object_or_404
 from rest_framework.serializers import HyperlinkedModelSerializer, ModelSerializer
 from rest_framework import serializers
 import base64
 import io
 from PIL import Image
+
 
 
 class CustomSerializer(ModelSerializer):
@@ -23,6 +25,22 @@ class CustomSerializer(ModelSerializer):
             existing = set(self.fields)
             for field_name in existing - allowed:
                 self.fields.pop(field_name)
+
+
+def alert(product,message):
+    print("GOOooooooooooo")
+
+
+def get_lines_items(items):
+    from orders.models import Product, LineItem
+    _items = []
+    for item in items:
+        n = item["quantity"] if "quantity" in item else 1
+        p = get_object_or_404(Product, pk=item["product"])
+        l = LineItem(product=p, quantity=n)
+        l.save()
+        _items.append(l.id)
+    return _items
 
 
 def is_number(s):

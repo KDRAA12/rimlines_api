@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = '=5s^7(m!a0wrn^c&3r77o()th+je&38kx7fw!hm(5+bolyjdcr'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['185.143.45.35', '127.0.0.1', 'localhost']
 
@@ -129,7 +129,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
-    'EXCEPTION_HANDLER': 'djangoProject.exec_handler.custom_exception_handler',
+    'EXCEPTION_HANDLER': 'exec_handler.custom_exception_handler',
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
     ]
