@@ -18,7 +18,6 @@ class TopUp(models.Model):
     type = models.CharField(max_length=300, choices=CHOICES, blank=True, null=True)
     withdrawed = models.BooleanField(default=False)
 
-
 class Versement(models.Model):
 
     topups = models.ManyToManyField(TopUp)

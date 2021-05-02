@@ -5,10 +5,15 @@ from helpers import CustomSerializer
 
 
 class TopUpSerializer(CustomSerializer):
+    title = serializers.SerializerMethodField()
+
+    def get_title(self, obj):
+        return f"{obj.customer.user.username}"
+
     class Meta:
         model=TopUp
-        fields= '__all__'
-
+        # fields=['customer',,'maker','amount','type','withdrawed','date']
+        fields='__all__'
 
 class VersementSerializer(CustomSerializer):
     class Meta:
