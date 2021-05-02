@@ -6,6 +6,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
 # Create your views here.
 from rest_framework.decorators import action
+from rest_framework import filters
 from rest_framework.response import Response
 
 from helpers import decodeDesignImage, get_lines_items
@@ -56,12 +57,13 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
 
 class OrderViewSet(viewsets.ModelViewSet):
-    # todo:do we make partial order resolving?
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 
-    # filter_backends=[OrderingFilter]
-    # ordering=["-ordered_date"]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
+    filterset_fields = ['status']
+    ordering = ["-ordered_date"]
+    search_fields = ['owner__user__username', 'items__product__title','versed_to']
 
     def make_payment(self, order):
         if order.owner.edit_balance(order.total_price, "-"):
@@ -96,7 +98,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
                 if not gds:
 
-                    if gds.count() ==0:
+                    if gds.count() == 0:
                         print("product not in stock")
                     else:
                         print("there is not enough goods")
@@ -107,7 +109,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                     headers = self.get_success_headers(_o.data)
                     return Response(_o.data, status=status.HTTP_201_CREATED, headers=headers)
                 for good in gds:
-                    good.status="SENT"
+                    good.status = "SENT"
                     good.save()
                     goods.append(good.id)
             order.goods.set(goods)
