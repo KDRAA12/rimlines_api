@@ -31,7 +31,7 @@ class ManagerViewSet(viewsets.ModelViewSet):
         for topup in topups:
             total += topup.amount
 
-        return Response({'total': total})
+        return Response({'total': total,'number':topups.count()})
 
     #todo:we should ad away to reterive money from each agent
 class CustomerViewSet(viewsets.ModelViewSet):
