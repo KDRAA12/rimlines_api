@@ -132,7 +132,8 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'exec_handler.custom_exception_handler',
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
-    ]
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination'
 
 }
 
