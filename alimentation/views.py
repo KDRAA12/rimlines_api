@@ -38,6 +38,7 @@ class TopUpViewSet(viewsets.ModelViewSet):
             customer = Customer(user=user)
             customer.save()
         m = Manager.objects.filter(user__username=request.user.username).first()
+        print(f"f:{request.user}")
         topup = TopUp(maker=m, amount=amount, customer=customer, type="cash")
         topup.save()
 

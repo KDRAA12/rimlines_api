@@ -136,7 +136,7 @@ class Payment(models.Model):
     sold_after = models.FloatField()
 
 
-class Report(models.Model):
+class ReportPaper(models.Model):
     LEVELS = (
         (0, "MONNEY DIDN'T ARRIVE"),
         (1, "Transaction is incomplete"),

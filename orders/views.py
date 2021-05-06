@@ -10,9 +10,9 @@ from rest_framework import filters
 from rest_framework.response import Response
 
 from helpers import decodeDesignImage, get_lines_items
-from orders.models import Product, Refund, LineItem, Payment, Order, Report, Good, Media
+from orders.models import Product, Refund, LineItem, Payment, Order, Good, Media
 from orders.serializers import ProductSerializer, RefundSerializer, LineItemSerializer, PaymentSerializer, \
-    OrderSerializer, ReportSerializer, GoodSerializer, MediaSerializer
+    OrderSerializer, GoodSerializer, MediaSerializer
 
 
 class ProductViewSet(viewsets.ModelViewSet):
@@ -144,20 +144,20 @@ class OrderViewSet(viewsets.ModelViewSet):
     def cancel_order(self, request, pk=None):
         pass
 
-
-class ReportViewSet(viewsets.ModelViewSet):
-    serializer_class = ReportSerializer
-    queryset = Report.objects.all()
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['order', 'level', 'report', 'maker']
-
-    def create(self, request, *args, **kwargs):
-        order = Order.objects.filter(id=self.request.data["order"]).first()
-        l = self.request.data['level'] if self.request.data['level'] else 1
-        report = Report(maker=self.request.user, order=order, message=self.request.data["message"], level=l)
-        report.save()
-        r = ReportSerializer(report)
-        return r.data
+#
+# class ReportViewSet(viewsets.ModelViewSet):
+#     serializer_class = ReportSerializer
+#     queryset = Report.objects.all()
+#     filter_backends = [DjangoFilterBackend]
+#     filterset_fields = ['order', 'level', 'report', 'maker']
+#
+#     def create(self, request, *args, **kwargs):
+#         order = Order.objects.filter(id=self.request.data["order"]).first()
+#         l = self.request.data['level'] if self.request.data['level'] else 1
+#         report = Report(maker=self.request.user, order=order, message=self.request.data["message"], level=l)
+#         report.save()
+#         r = ReportSerializer(report)
+#         return r.data
 
 
 class GoodViewSet(viewsets.ModelViewSet):
@@ -171,9 +171,8 @@ class GoodViewSet(viewsets.ModelViewSet):
         g.save()
         p.stock += 1
         p.save()
-        ims = []
-        if "ims" in self.request.data:
-            for image in self.request.data["ims"]:
+        if "images" in self.request.data:
+            for image in self.request.data["images"]:
                 data = {'image': image, 'alt': 'dd'}
                 m = MediaSerializer(data=data)
                 if m.is_valid():
