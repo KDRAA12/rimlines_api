@@ -1,23 +1,27 @@
 from datetime import datetime, timezone
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from django_filters.rest_framework import DjangoFilterBackend
-
 from rest_framework import viewsets, status
 # Create your views here.
 from rest_framework.decorators import action
 from rest_framework import filters
 from rest_framework.response import Response
 
-from helpers import decodeDesignImage, get_lines_items
+from helpers import  get_lines_items
 from orders.models import Product, Refund, LineItem, Payment, Order, Good, Media
 from orders.serializers import ProductSerializer, RefundSerializer, LineItemSerializer, PaymentSerializer, \
     OrderSerializer, GoodSerializer, MediaSerializer
+
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
+    filterset_fields = ['title']
+    search_fields = ['title']
 
     @action(detail=False, methods=['get'], )
     def after(self, request, *args, **kwargs):
@@ -74,14 +78,16 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         if "items" in request.data:
-            request.data["items"] = get_lines_items(request.data["items"])
+            buffer = get_lines_items(request.data["items"])
+            request.data["items"]=[]
+
         else:
             return Response({"error": "empty orders"})
         _o = OrderSerializer(data=request.data)
 
         if _o.is_valid():
             order = _o.save()
-
+            order.items.add(*buffer)
             if not self.make_payment(order):
                 order.delete()
                 return Response({"success": False, "message": "Not enough Balance"})

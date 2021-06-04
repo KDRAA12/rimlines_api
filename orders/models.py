@@ -10,6 +10,8 @@ class LineItem(models.Model):
     date_added = models.DateTimeField(auto_now_add=True)
     quantity = models.PositiveIntegerField(default=1)
     product = models.ForeignKey('Product', on_delete=models.CASCADE)
+    note = models.TextField()
+    goods = models.ManyToManyField('Good', default=[])
 
     def __str__(self):
         return f"{self.quantity} of {self.product.title}"
@@ -78,7 +80,7 @@ class Order(models.Model):
     items = models.ManyToManyField('LineItem')
     ordered_date = models.DateTimeField(auto_now_add=True)
     status = models.SmallIntegerField( choices=CHOICES, blank=True, null=True)
-    goods = models.ManyToManyField('good',default=[])
+    goods = models.ManyToManyField('Good',default=[])
 
     @property
     def total_price(self):

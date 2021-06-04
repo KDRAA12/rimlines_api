@@ -18,6 +18,7 @@ class Customer(models.Model):
         return self.user.username
 
     def edit_balance(self, amount, opperation):
+
         if is_number(amount) and float(amount) > 0 and amount<=self.balance:
 
             if opperation == "+":

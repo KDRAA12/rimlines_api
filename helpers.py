@@ -34,12 +34,14 @@ def alert(product,message):
 def get_lines_items(items):
     from orders.models import Product, LineItem
     _items = []
+    print(f"i:{items}")
     for item in items:
-        n = item["quantity"] if "quantity" in item else 1
-        p = get_object_or_404(Product, pk=item["product"])
-        l = LineItem(product=p, quantity=n)
+        q = item["quantity"] if "quantity" in item else 1
+        n = item["note"] if "note" in item else 1
+        p = get_object_or_404(Product, pk=int(item["product"]))
+        l = LineItem(product=p, quantity=q,note=n)
         l.save()
-        _items.append(l.id)
+        _items.append(l)
     return _items
 
 

@@ -12,14 +12,34 @@ class ProductSerializer(CustomSerializer):
     class Meta:
         model=Product
         fields='__all__'
-
-
-class OrderSerializer(CustomSerializer):
+class ShortProductSerializer(CustomSerializer):
     class Meta:
-        model=Order
+        model = Product
+        fields= ['id','title','price']
+
+class ShortGoodSerializer(CustomSerializer):
+    class Meta:
+        model = Good
+        fields =['note','id']
+
+class LineItemSerializer(CustomSerializer):
+    product = ShortProductSerializer(read_only=True)
+    goods= ShortGoodSerializer(read_only=True,many=True)
+    class Meta:
+        model=LineItem
         fields='__all__'
 
 
+class OrderSerializer(CustomSerializer):
+    username= serializers.SerializerMethodField()
+    items = LineItemSerializer(many=True, read_only=True)
+
+    def get_username(self, obj):
+        return f"{obj.owner.user.username}"
+
+    class Meta:
+        model=Order
+        fields='__all__'
 class MediaSerializer(HyperlinkedModelSerializer):
     image= Base64ImageField(required=True)
     class Meta:
@@ -41,10 +61,6 @@ class PaymentSerializer(CustomSerializer):
         fields='__all__'
 
 
-class LineItemSerializer(CustomSerializer):
-    class Meta:
-        model=LineItem
-        fields='__all__'
 
 
 class RefundSerializer(CustomSerializer):
